@@ -41,17 +41,40 @@ impl Scanner {
         for entry in WalkDir::new(scan_path)
             .follow_links(false)
             .into_iter()
+            .filter_entry(|e| {
+                // Skip hidden directories and common non-project directories
+                if let Some(name) = e.file_name().to_str() {
+                    // Skip hidden files/dirs
+                    if name.starts_with('.') {
+                        return false;
+                    }
+                    // Skip system directories
+                    if name == "Library" || name == "System" {
+                        return false;
+                    }
+                }
+                true
+            })
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
 
-            // Skip hidden directories and common non-project directories
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with('.') || name == "Library" || name == "System" {
-                    continue;
+            // Skip anything that's already inside a node_modules directory (check all ancestors)
+            // This prevents recursing into nested node_modules like:
+            // /project/node_modules/@esbuild-kit/core-utils/node_modules
+            // We still want to detect the top-level /project/node_modules
+            let mut has_node_modules_ancestor = false;
+            for ancestor in path.ancestors().skip(1) {
+                if ancestor.file_name() == Some(std::ffi::OsStr::new("node_modules")) {
+                    has_node_modules_ancestor = true;
+                    break;
                 }
             }
+            if has_node_modules_ancestor {
+                continue;
+            }
 
+            // Now check if this entry IS a node_modules directory at the project level
             if path.file_name() == Some(std::ffi::OsStr::new("node_modules")) && path.is_dir() {
                 if let Some(project_path) = path.parent() {
                     if let Ok(metadata) = fs::metadata(path) {

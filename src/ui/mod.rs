@@ -2,6 +2,9 @@ use crate::app::StorageCleaner;
 use gpui::prelude::*;
 use gpui::*;
 
+mod theme;
+use theme::Theme;
+
 pub fn render_app(
     app: &mut StorageCleaner,
     _window: &mut Window,
@@ -9,13 +12,14 @@ pub fn render_app(
 ) -> impl IntoElement {
     let selected_count = app.selected_count();
     let total_size_gb = app.total_selected_size_gb();
+    let theme = Theme::zen_dark();
 
     div()
         .size_full()
         .flex()
         .flex_col()
-        .bg(rgb(0x1e1e1e))
-        .text_color(rgb(0xcccccc))
+        .bg(theme.background)
+        .text_color(theme.text)
         .child(render_header(app, selected_count, total_size_gb, cx))
         .child(render_project_list(app, cx))
 }
@@ -26,14 +30,16 @@ fn render_header(
     total_size_gb: f64,
     cx: &mut Context<StorageCleaner>,
 ) -> impl IntoElement {
+    let theme = Theme::zen_dark();
+
     div()
         .flex()
         .flex_col()
         .p_4()
         .gap_3()
-        .bg(rgb(0x252526))
+        .bg(theme.elevated_surface_background)
         .border_b_1()
-        .border_color(rgb(0x3e3e42))
+        .border_color(theme.border)
         .child(
             div()
                 .text_2xl()
@@ -44,7 +50,7 @@ fn render_header(
         .child(
             div()
                 .text_sm()
-                .text_color(rgb(0x858585))
+                .text_color(theme.text_muted)
                 .child(format!("Scanning: {}", app.config.scan_path.display())),
         )
         .child(
@@ -54,12 +60,12 @@ fn render_header(
                 .px_3()
                 .py_1()
                 .text_sm()
-                .bg(rgb(0x3c3c3c))
+                .bg(theme.element_background)
                 .rounded_md()
                 .border_1()
-                .border_color(rgb(0x5a5a5a))
+                .border_color(theme.border_selected)
                 .child("📁 Change Directory...")
-                .hover(|style| style.bg(rgb(0x4a4a4a)))
+                .hover(|style| style.bg(theme.element_hover))
                 .on_click(cx.listener(|view, _event, _window, cx| {
                     // Open directory picker
                     if let Some(path) = native_dialog::FileDialog::new()
@@ -78,7 +84,7 @@ fn render_header(
             this.child(
                 div()
                     .text_sm()
-                    .text_color(rgb(0x4ec9b0))
+                    .text_color(theme.text_accent)
                     .child(format!("Selected: {:.2} GB", total_size_gb)),
             )
         })
@@ -89,6 +95,8 @@ fn render_controls(
     selected_count: usize,
     cx: &mut Context<StorageCleaner>,
 ) -> impl IntoElement {
+    let theme = Theme::zen_dark();
+
     div()
         .flex()
         .gap_3()
@@ -98,7 +106,7 @@ fn render_controls(
             div()
                 .px_2()
                 .py_1()
-                .bg(rgb(0x3c3c3c))
+                .bg(theme.element_background)
                 .rounded_md()
                 .child(app.config.threshold_days.to_string()),
         )
@@ -108,16 +116,16 @@ fn render_controls(
                 .cursor_pointer()
                 .px_4()
                 .py_2()
-                .bg(rgb(0x0e639c))
+                .bg(theme.info_background)
                 .rounded_md()
                 .border_1()
-                .border_color(rgb(0x007acc))
+                .border_color(theme.info)
                 .child(if app.is_scanning {
                     "Scanning..."
                 } else {
                     "Scan"
                 })
-                .hover(|style| style.bg(rgb(0x1177bb)))
+                .hover(|style| style.bg(theme.info))
                 .on_click(cx.listener(|view, _event, _window, cx| {
                     if !view.is_scanning {
                         view.scan_for_projects();
@@ -132,20 +140,20 @@ fn render_controls(
                 .px_4()
                 .py_2()
                 .bg(if selected_count > 0 {
-                    rgb(0xc72e0f)
+                    theme.error_background
                 } else {
-                    rgb(0x3c3c3c)
+                    theme.element_background
                 })
                 .rounded_md()
                 .border_1()
                 .border_color(if selected_count > 0 {
-                    rgb(0xf14c4c)
+                    theme.error
                 } else {
-                    rgb(0x5a5a5a)
+                    theme.border_selected
                 })
                 .child(format!("Delete Selected ({})", selected_count))
                 .when(selected_count > 0, |div| {
-                    div.hover(|style| style.bg(rgb(0xe03e1b)))
+                    div.hover(|style| style.bg(theme.error))
                 })
                 .on_click(cx.listener(|view, _event, _window, cx| {
                     if view.selected_count() > 0 {
@@ -157,6 +165,8 @@ fn render_controls(
 }
 
 fn render_project_list(app: &StorageCleaner, cx: &mut Context<StorageCleaner>) -> impl IntoElement {
+    let theme = Theme::zen_dark();
+
     div()
         .id("project_list")
         .flex()
@@ -178,7 +188,7 @@ fn render_project_list(app: &StorageCleaner, cx: &mut Context<StorageCleaner>) -
                     .items_center()
                     .justify_center()
                     .flex_1()
-                    .text_color(rgb(0x858585))
+                    .text_color(theme.text_muted)
                     .child("No old projects found. Click 'Scan' to search."),
             )
         })
@@ -189,30 +199,32 @@ fn render_project_card(
     index: usize,
     cx: &mut Context<StorageCleaner>,
 ) -> impl IntoElement {
+    let theme = Theme::zen_dark();
     let selected = project.selected;
+
     div()
         .id(("project", index))
         .flex()
         .p_3()
         .gap_3()
         .bg(if selected {
-            rgb(0x37373d)
+            theme.element_selected
         } else {
-            rgb(0x2d2d30)
+            theme.editor_background
         })
         .rounded_md()
         .border_1()
         .border_color(if selected {
-            rgb(0x007acc)
+            theme.border_focused
         } else {
-            rgb(0x3e3e42)
+            theme.border
         })
         .cursor_pointer()
         .hover(|style| {
             style.bg(if selected {
-                rgb(0x3e3e46)
+                theme.element_active
             } else {
-                rgb(0x333337)
+                theme.element_hover
             })
         })
         .on_click(cx.listener(move |view, _event, _window, cx| {
@@ -226,11 +238,11 @@ fn render_project_card(
                 .justify_center()
                 .size_5()
                 .border_1()
-                .border_color(rgb(0x6e6e6e))
+                .border_color(theme.border_selected)
                 .rounded_sm()
                 .when(selected, |this| {
-                    this.bg(rgb(0x007acc))
-                        .child(div().text_color(rgb(0xffffff)).child("✓"))
+                    this.bg(theme.text_accent)
+                        .child(div().text_color(theme.text).child("✓"))
                 }),
         )
         .child(
@@ -242,7 +254,7 @@ fn render_project_card(
                 .child(
                     div()
                         .font_weight(FontWeight::SEMIBOLD)
-                        .text_color(rgb(0xcccccc))
+                        .text_color(theme.text)
                         .child(
                             project
                                 .project_path
@@ -255,7 +267,7 @@ fn render_project_card(
                 .child(
                     div()
                         .text_sm()
-                        .text_color(rgb(0x858585))
+                        .text_color(theme.text_muted)
                         .child(format!("{}", project.project_path.display())),
                 )
                 .child(
@@ -263,7 +275,7 @@ fn render_project_card(
                         .flex()
                         .gap_3()
                         .text_xs()
-                        .text_color(rgb(0x858585))
+                        .text_color(theme.text_placeholder)
                         .child(format!("{} days old", project.days_old()))
                         .child("•")
                         .child(format!("{:.2} GB", project.size_gb())),
