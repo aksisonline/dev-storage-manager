@@ -73,5 +73,5 @@ When creating a new release, add a new section with:
 
 Replace `X.Y.Z` with the version number and `YYYY-MM-DD` with the release date.
 
-[Unreleased]: https://github.com/YOUR_USERNAME/dev-storage-cleaner/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/YOUR_USERNAME/dev-storage-cleaner/releases/tag/v0.1.0
+[Unreleased]: https://github.com/aksisonline/dev-storage-cleaner/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aksisonline/dev-storage-cleaner/releases/tag/v0.1.0

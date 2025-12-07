@@ -86,7 +86,7 @@ git push origin main
 git push origin v0.1.1  # Use the version from step 2
 
 # 4. Watch the magic happen!
-# Go to: https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions
+# Go to: https://github.com/aksisonline/dev-storage-cleaner/actions
 ```
 
 ### Windows Users
@@ -100,7 +100,7 @@ git push origin v0.1.1  # Use the version from step 2
 
 ### 1. Replace Placeholders
 
-In the following files, replace `YOUR_USERNAME` with your GitHub username:
+In the following files, replace `aksisonline` with your GitHub username:
 
 - `README.md` (badges and links)
 - `CHANGELOG.md` (links)
@@ -137,7 +137,7 @@ Every push or PR will automatically:
 - Run linter
 - Build the project
 
-View results at: `https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions`
+View results at: `https://github.com/aksisonline/dev-storage-cleaner/actions`
 
 ### For Releases
 
@@ -159,13 +159,13 @@ git push origin v0.x.x
 
 ## 📦 What Gets Built
 
-Each release includes three binaries:
+Each release includes three installers:
 
-| Platform | File Name | Target |
-|----------|-----------|--------|
-| macOS Intel | `dev-storage-cleaner-macos-x86_64` | x86_64-apple-darwin |
-| macOS Apple Silicon | `dev-storage-cleaner-macos-aarch64` | aarch64-apple-darwin |
-| Windows 64-bit | `dev-storage-cleaner-windows-x86_64.exe` | x86_64-pc-windows-msvc |
+| Platform | File Name | Target | Format |
+|----------|-----------|--------|--------|
+| macOS Intel | `DevStorageCleaner-macos-x86_64.dmg` | x86_64-apple-darwin | DMG installer |
+| macOS Apple Silicon | `DevStorageCleaner-macos-aarch64.dmg` | aarch64-apple-darwin | DMG installer |
+| Windows 64-bit | `DevStorageCleaner-windows-x86_64.zip` | x86_64-pc-windows-msvc | ZIP package |
 
 ## 🔍 Monitoring Builds
 
@@ -179,16 +179,16 @@ gh run list
 gh run view --log
 
 # Watch in browser
-open "https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions"
+open "https://github.com/aksisonline/dev-storage-cleaner/actions"
 ```
 
 ### Common Build Times
 
 - **CI workflow:** ~3-5 minutes
-- **Release workflow:** ~5-10 minutes
-  - macOS builds: ~3-4 minutes each
-  - Windows build: ~2-3 minutes
-  - Release creation: ~1 minute
+- **Release workflow:** ~8-12 minutes
+  - macOS builds: ~4-5 minutes each (includes .app + DMG creation)
+  - Windows build: ~3-4 minutes (includes ZIP packaging)
+  - Release creation: ~1-2 minutes
 
 ## 💰 Cost Considerations
 
@@ -197,11 +197,11 @@ open "https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions"
 - ✅ Unlimited build minutes on Linux
 
 **Usage per release:**
-- macOS builds (2): ~6-8 minutes × 10 = 60-80 billed minutes
-- Windows build (1): ~2-3 minutes × 2 = 4-6 billed minutes
-- **Total:** ~64-86 billed minutes per release
+- macOS builds (2 DMGs): ~8-10 minutes × 10 = 80-100 billed minutes
+- Windows build (1 ZIP): ~3-4 minutes × 2 = 6-8 billed minutes
+- **Total:** ~86-108 billed minutes per release
 
-**You can do ~23 releases per month on the free tier.**
+**You can do ~18-23 releases per month on the free tier.**
 
 ## 🛠️ Customization
 
@@ -210,14 +210,31 @@ open "https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions"
 To build for Linux:
 
 1. Edit `.github/workflows/release.yml`
-2. Add to the matrix:
+2. Add a new `build-linux` job similar to `build-macos` or `build-windows`:
    ```yaml
-   - os: ubuntu-latest
-     target: x86_64-unknown-linux-gnu
-     artifact_name: dev-storage-cleaner
-     asset_name: dev-storage-cleaner-linux-x86_64
+   build-linux:
+     name: Build Linux x86_64
+     runs-on: ubuntu-latest
+     steps:
+       - name: Build release binary
+         run: cargo build --release --target x86_64-unknown-linux-gnu
+       - name: Create tar.gz
+         run: |
+           mkdir -p dist
+           cp target/x86_64-unknown-linux-gnu/release/dev-storage-cleaner dist/
+           tar -czf DevStorageCleaner-linux-x86_64.tar.gz -C dist .
    ```
 
+3. Update `needs` array in `create-release` job to include `build-linux`
+</text>
+
+<old_text line=312>
+**Issue**: Build fails on a specific platform
+- Check the build logs for that specific matrix job
+- Common issues:
+  - Missing system dependencies (rare for Rust)
+  - Platform-specific code issues
+  - Dependency compilation failures
 ### Change Trigger Branches
 
 Edit `.github/workflows/ci.yml`:
@@ -332,12 +349,12 @@ git tag -d v0.0.1-test
 
 After setup, you should:
 
-- [ ] Replace `YOUR_USERNAME` in all files
+- [ ] Replace `aksisonline` in all files
 - [ ] Update repository permissions
 - [ ] Test CI workflow with a dummy commit
 - [ ] Create first release (can be v0.1.0)
-- [ ] Verify binaries are attached
-- [ ] Download and test binaries
+- [ ] Verify installers are attached (DMGs and ZIP)
+- [ ] Download and test installers on each platform
 - [ ] Update README badges to show actual status
 
 ## 🤝 Contributing
@@ -345,7 +362,7 @@ After setup, you should:
 With this setup:
 - Contributors can see CI status on PRs
 - Maintainers can release with one command
-- Users get reliable, tested binaries
+- Users get professional installers (DMG for macOS, ZIP for Windows)
 - Everything is automated and reproducible
 
 ## 📞 Support
@@ -374,10 +391,11 @@ The workflows:
    - Verify everything works
 
 2. **Soon:**
-   - Add code signing (macOS notarization)
-   - Create installers (.dmg, .msi)
-   - Add Linux builds
+   - Add code signing and notarization (macOS)
+   - Create Windows MSI installer (currently using ZIP)
+   - Add Linux builds (AppImage, .deb, .rpm)
    - Set up changelog automation
+   - Add custom DMG background image
 
 3. **Later:**
    - Add performance benchmarks

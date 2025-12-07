@@ -21,34 +21,35 @@
 
 ## 📦 Downloads
 
-Download the appropriate binary for your platform:
+Download the appropriate installer for your platform:
 
 ### macOS
-- **Intel Macs**: `dev-storage-cleaner-macos-x86_64`
-- **Apple Silicon (M1/M2/M3)**: `dev-storage-cleaner-macos-aarch64`
+- **Intel Macs**: `DevStorageCleaner-macos-x86_64.dmg`
+- **Apple Silicon (M1/M2/M3)**: `DevStorageCleaner-macos-aarch64.dmg`
 
 ### Windows
-- **64-bit**: `dev-storage-cleaner-windows-x86_64.exe`
+- **64-bit**: `DevStorageCleaner-windows-x86_64.zip`
 
 ## 📋 Installation
 
 ### macOS
-1. Download the appropriate binary for your Mac
-2. Open Terminal and run:
-   ```bash
-   chmod +x dev-storage-cleaner-macos-*
-   ./dev-storage-cleaner-macos-*
-   ```
-3. If you get a security warning, right-click the file and select "Open"
+1. Download the appropriate DMG file for your Mac
+2. Open the DMG file (double-click)
+3. Drag "Dev Storage Cleaner" to the Applications folder
+4. Launch from Applications
+5. On first launch, right-click the app and select "Open" (security requirement)
+6. Optionally, eject the DMG after installation
 
 ### Windows
-1. Download `dev-storage-cleaner-windows-x86_64.exe`
-2. Double-click to run
-3. If Windows Defender blocks it, click "More info" → "Run anyway"
+1. Download `DevStorageCleaner-windows-x86_64.zip`
+2. Extract the ZIP file to any folder
+3. Run `dev-storage-cleaner.exe`
+4. If Windows Defender blocks it, click "More info" → "Run anyway"
+5. You can create a desktop shortcut for easy access
 
 ## 📝 Changelog
 
-See [CHANGELOG.md](https://github.com/YOUR_USERNAME/dev-storage-cleaner/blob/main/CHANGELOG.md) for the full changelog.
+See [CHANGELOG.md](https://github.com/aksisonline/dev-storage-cleaner/blob/main/CHANGELOG.md) for the full changelog.
 
 ## 🔄 Upgrade Notes
 
@@ -60,4 +61,4 @@ See [CHANGELOG.md](https://github.com/YOUR_USERNAME/dev-storage-cleaner/blob/mai
 
 ---
 
-**Full Changelog**: https://github.com/YOUR_USERNAME/dev-storage-cleaner/compare/v{PREVIOUS_VERSION}...v{VERSION}
+**Full Changelog**: https://github.com/aksisonline/dev-storage-cleaner/compare/v{PREVIOUS_VERSION}...v{VERSION}

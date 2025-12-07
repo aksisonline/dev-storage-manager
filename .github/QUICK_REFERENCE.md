@@ -6,11 +6,12 @@
 
 ```bash
 # Automatic (recommended)
+# The script automatically commits and tags for you!
 ./scripts/bump-version.sh patch    # 0.1.0 → 0.1.1
 ./scripts/bump-version.sh minor    # 0.1.0 → 0.2.0
 ./scripts/bump-version.sh major    # 0.1.0 → 1.0.0
 
-# Then push
+# The script already committed and tagged, just push:
 git push origin main
 git push origin v0.x.x
 
@@ -20,18 +21,21 @@ git push origin main
 git push origin v0.x.x
 ```
 
-### Manual Release
+### Manual Release (Without Script)
 
 ```bash
 # 1. Update Cargo.toml version
-version = "0.2.0"
+# Edit Cargo.toml: version = "0.2.0"
 
-# 2. Commit and tag
-git add Cargo.toml
+# 2. Update Cargo.lock
+cargo check
+
+# 3. Commit and tag
+git add Cargo.toml Cargo.lock
 git commit -m "Bump version to 0.2.0"
 git tag v0.2.0
 
-# 3. Push
+# 4. Push
 git push origin main
 git push origin v0.2.0
 ```
@@ -89,7 +93,7 @@ gh run watch                   # Watch current run
 gh run view --log             # View logs
 
 # Browser
-open "https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions"
+open "https://github.com/aksisonline/dev-storage-cleaner/actions"
 ```
 
 ## 📦 Release Management
@@ -154,38 +158,52 @@ CHANGELOG.md                      # Version history
 
 ## 🎯 Release Checklist
 
-- [ ] All tests pass locally
+Before running bump script:
+- [ ] All tests pass locally (`cargo test`)
 - [ ] CHANGELOG.md updated
 - [ ] Code formatted (`cargo fmt`)
-- [ ] No clippy warnings
-- [ ] Version follows semver
+- [ ] No clippy warnings (`cargo clippy`)
+- [ ] All changes committed
 - [ ] On `main` branch
 - [ ] Pulled latest changes
+
+After running bump script:
+- [ ] Review the commit: `git show HEAD`
+- [ ] Push to trigger release
 
 ## 📊 Build Times
 
 | OS | Build Time | Billed Minutes |
 |----|------------|----------------|
-| macOS (2 builds) | ~6-8 min | 60-80 min |
-| Windows | ~2-3 min | 4-6 min |
-| **Total per release** | **~8-11 min** | **~64-86 min** |
+| macOS (2 DMG builds) | ~8-10 min | 80-100 min |
+| Windows (1 ZIP) | ~3-4 min | 6-8 min |
+| **Total per release** | **~11-14 min** | **~86-108 min** |
 
-**Free tier:** 2,000 minutes/month → ~23 releases/month
+**Free tier:** 2,000 minutes/month → ~18-23 releases/month
 
 ## 🔗 Quick Links
 
-- [Actions](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions)
-- [Releases](https://github.com/YOUR_USERNAME/dev-storage-cleaner/releases)
-- [Settings](https://github.com/YOUR_USERNAME/dev-storage-cleaner/settings)
+### Release Files
+
+- macOS Intel: `DevStorageCleaner-macos-x86_64.dmg`
+- macOS Apple Silicon: `DevStorageCleaner-macos-aarch64.dmg`
+- Windows: `DevStorageCleaner-windows-x86_64.zip`
+
+### Repository Links
+
+- [Actions](https://github.com/aksisonline/dev-storage-cleaner/actions)
+- [Releases](https://github.com/aksisonline/dev-storage-cleaner/releases)
+- [Settings](https://github.com/aksisonline/dev-storage-cleaner/settings)
 - [Workflows](.github/workflows/)
 
 ## 💡 Tips
 
-1. **Always test locally before pushing**
-2. **Update CHANGELOG.md with each release**
-3. **Use semantic versioning**
-4. **Check Actions tab after pushing tags**
-5. **Keep workflows up to date**
+1. **The bump script commits and tags automatically** - no need to commit first
+2. **Always test locally before running bump script**
+3. **Update CHANGELOG.md before bumping version**
+4. **Use semantic versioning** (patch/minor/major)
+5. **Check Actions tab after pushing tags**
+6. **Review the commit before pushing** (`git show HEAD`)
 
 ## 🆘 Emergency Commands
 
@@ -213,4 +231,4 @@ git push origin main
 
 ---
 
-**Remember:** Replace `YOUR_USERNAME` with your GitHub username in all files!
+**Remember:** Replace `aksisonline` with your GitHub username in all files!

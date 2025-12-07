@@ -26,10 +26,11 @@ This directory contains automated workflows for building, testing, and releasing
 - **Manual**: Workflow dispatch with version input
 
 **Jobs:**
-- **Build**: Creates release binaries for:
-  - macOS x86_64 (Intel)
-  - macOS aarch64 (Apple Silicon)
-  - Windows x86_64
+- **Build macOS Job:** Creates DMG installers for:
+  - macOS x86_64 (Intel) - Full .app bundle in DMG
+  - macOS aarch64 (Apple Silicon) - Full .app bundle in DMG
+- **Build Windows Job:** Creates portable package:
+  - Windows x86_64 - ZIP with executable and docs
 - **Create Release**: 
   - Downloads all build artifacts
   - Creates a GitHub release with auto-generated release notes
@@ -37,9 +38,9 @@ This directory contains automated workflows for building, testing, and releasing
 - **Verify Release**: Confirms the release was created successfully
 
 **Build Outputs:**
-- `dev-storage-cleaner-macos-x86_64` - macOS Intel binary
-- `dev-storage-cleaner-macos-aarch64` - macOS Apple Silicon binary
-- `dev-storage-cleaner-windows-x86_64.exe` - Windows binary
+- `DevStorageCleaner-macos-x86_64.dmg` - macOS Intel installer (DMG)
+- `DevStorageCleaner-macos-aarch64.dmg` - macOS Apple Silicon installer (DMG)
+- `DevStorageCleaner-windows-x86_64.zip` - Windows portable package (ZIP)
 
 ## Creating a Release
 
@@ -110,6 +111,8 @@ These are automatically provided via `GITHUB_TOKEN` in GitHub Actions.
   - Missing system dependencies (rare for Rust)
   - Platform-specific code issues
   - Dependency compilation failures
+  - DMG creation issues (macOS): Check if scripts have execute permissions
+  - ZIP creation issues (Windows): PowerShell errors
 
 **Issue**: Release creation fails
 - Ensure the tag follows the `v*.*.*` pattern
@@ -153,26 +156,35 @@ cargo build --release
 To add support for additional platforms (e.g., Linux):
 
 1. Edit `.github/workflows/release.yml`
-2. Add a new matrix entry in the `build` job:
-   ```yaml
-   - os: ubuntu-latest
-     target: x86_64-unknown-linux-gnu
-     artifact_name: dev-storage-cleaner
-     asset_name: dev-storage-cleaner-linux-x86_64
-   ```
+2. Create a new `build-linux` job similar to `build-macos` or `build-windows`
+3. Add appropriate packaging steps (e.g., AppImage, .deb, .rpm)
+4. Update the `needs` array in `create-release` to include the new job
 
-3. If needed, add platform-specific build steps
+**Example for Linux:**
+```yaml
+build-linux:
+  name: Build Linux x86_64
+  runs-on: ubuntu-latest
+  steps:
+    - name: Build release binary
+      run: cargo build --release --target x86_64-unknown-linux-gnu
+    - name: Create tar.gz
+      run: |
+        mkdir -p dist
+        cp target/x86_64-unknown-linux-gnu/release/dev-storage-cleaner dist/
+        tar -czf DevStorageCleaner-linux-x86_64.tar.gz -C dist .
+```
 
 ## Workflow Badges
 
 Add these badges to your main README.md:
 
 ```markdown
-[![CI](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/ci.yml)
-[![Release](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/Build%20and%20Release/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/release.yml)
+[![CI](https://github.com/aksisonline/dev-storage-cleaner/workflows/CI/badge.svg)](https://github.com/aksisonline/dev-storage-cleaner/actions/workflows/ci.yml)
+[![Release](https://github.com/aksisonline/dev-storage-cleaner/workflows/Build%20and%20Release/badge.svg)](https://github.com/aksisonline/dev-storage-cleaner/actions/workflows/release.yml)
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username.
+Replace `aksisonline` with your GitHub username.
 
 ## Cost Considerations
 
@@ -184,22 +196,26 @@ Replace `YOUR_USERNAME` with your GitHub username.
   - Windows: 2x
 
 Each release build uses approximately:
-- macOS (2 builds): ~20-30 minutes (200-300 billed minutes)
-- Windows (1 build): ~10-15 minutes (20-30 billed minutes)
-- Total per release: ~30-45 actual minutes (~230-330 billed minutes)
+- macOS (2 DMG builds): ~15-20 minutes (150-200 billed minutes)
+  - Includes: cargo build + .app bundling + DMG creation
+- Windows (1 ZIP build): ~10-15 minutes (20-30 billed minutes)
+  - Includes: cargo build + ZIP packaging
+- Total per release: ~25-35 actual minutes (~170-230 billed minutes)
 
 ## Future Enhancements
 
 Potential improvements to consider:
 
 1. **Code Signing**: Add macOS code signing and Windows code signing
-2. **Notarization**: Notarize macOS builds with Apple
-3. **Installers**: Create `.dmg` for macOS and `.msi` for Windows
+2. **Notarization**: Notarize macOS DMG builds with Apple
+3. **Windows Installer**: Create `.msi` installer (currently using `.zip`)
 4. **Linux Support**: Add Linux builds (AppImage, .deb, .rpm)
 5. **Changelog Automation**: Auto-generate CHANGELOG.md from commits
 6. **Pre-release Builds**: Add beta/alpha release support
 7. **Performance Benchmarks**: Add benchmark tracking across releases
 8. **Security Scanning**: Integrate dependency vulnerability scanning
+9. **Custom DMG Background**: Add custom background image to DMG installers
+10. **Auto-update**: Implement in-app update checking
 
 ## Resources
 

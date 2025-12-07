@@ -5,18 +5,18 @@ Quick reference for creating releases of Dev Storage Cleaner.
 ## Quick Release
 
 ```bash
-# 1. Bump version and create tag
+# 1. Bump version (automatically commits and tags for you!)
 ./scripts/bump-version.sh [patch|minor|major]
 
-# 2. Push to GitHub
+# 2. Push to GitHub (the script already committed and tagged)
 git push origin main
 git push origin v0.x.x
 
 # 3. Wait for GitHub Actions to build and create the release
-# Check: https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions
+# Check: https://github.com/aksisonline/dev-storage-cleaner/actions
 ```
 
-That's it! The automation handles the rest.
+That's it! The bump script does the commit and tag automatically.
 
 ## What Happens Automatically
 
@@ -52,7 +52,7 @@ When you push a tag (e.g., `v0.2.0`), GitHub Actions will:
 - Bug fix Z
 ```
 
-**Commit changes:**
+**Commit the CHANGELOG:**
 ```bash
 git add CHANGELOG.md
 git commit -m "Update CHANGELOG for v0.2.0"
@@ -74,11 +74,13 @@ git commit -m "Update CHANGELOG for v0.2.0"
 .\scripts\bump-version.ps1 patch
 ```
 
-This script will:
-- Update `Cargo.toml` version
-- Update `Cargo.lock`
-- Create a git commit
-- Create a git tag
+**The script automatically:**
+- ✅ Updates `Cargo.toml` version
+- ✅ Updates `Cargo.lock`
+- ✅ Creates a git commit
+- ✅ Creates a git tag
+
+**You don't need to commit first** - the script does it for you!
 
 **Manual version bump:**
 
@@ -109,7 +111,7 @@ git push origin v0.2.0
 
 ### 4. Monitor the Build
 
-1. Go to: https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions
+1. Go to: https://github.com/aksisonline/dev-storage-cleaner/actions
 2. Watch the "Build and Release" workflow
 3. Check for any failures
 
@@ -117,7 +119,7 @@ git push origin v0.2.0
 
 After the automated release is created:
 
-1. Go to: https://github.com/YOUR_USERNAME/dev-storage-cleaner/releases
+1. Go to: https://github.com/aksisonline/dev-storage-cleaner/releases
 2. Click "Edit" on the new release
 3. Enhance the auto-generated notes with:
    - Highlights from CHANGELOG.md
@@ -150,7 +152,7 @@ Follow [Semantic Versioning](https://semver.org/):
 
 You can also trigger a release manually:
 
-1. Go to: https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions
+1. Go to: https://github.com/aksisonline/dev-storage-cleaner/actions
 2. Select "Build and Release" workflow
 3. Click "Run workflow"
 4. Enter version number (e.g., `0.2.0`)
@@ -220,18 +222,25 @@ To create a pre-release:
    # Test the binary manually
    ```
 
-2. ✅ **Update CHANGELOG.md before each release**
+2. ✅ **Update CHANGELOG.md before running bump script**
+   - Commit the CHANGELOG first
+   - Then run the bump script
 
-3. ✅ **Use descriptive commit messages**
+3. ✅ **The bump script commits automatically**
+   - Don't manually commit version changes
+   - Let the script handle Cargo.toml and Cargo.lock
+   - Review the commit after: `git show HEAD`
+
+4. ✅ **Use descriptive commit messages for features**
    ```bash
    git commit -m "Add feature X that does Y"
    ```
 
-4. ✅ **Check the build status before pushing tags**
+5. ✅ **Check the build status before pushing tags**
 
-5. ✅ **Review auto-generated release notes and enhance them**
+6. ✅ **Review auto-generated release notes and enhance them**
 
-6. ✅ **Announce the release**
+7. ✅ **Announce the release**
    - Update project README if needed
    - Share on social media
    - Notify users
@@ -285,22 +294,28 @@ git push origin main
 
 ## Checklist
 
-Before releasing, ensure:
+Before running bump script:
 
-- [ ] All tests pass locally
-- [ ] CHANGELOG.md is updated
-- [ ] Version number follows semantic versioning
+- [ ] All tests pass locally (`cargo test`)
+- [ ] CHANGELOG.md is updated and committed
 - [ ] README.md is up to date
-- [ ] All changes are committed
+- [ ] All feature changes are committed
 - [ ] You're on the main branch
 - [ ] You've pulled the latest changes
+- [ ] Version number follows semantic versioning
 
-After releasing:
+After running bump script:
+
+- [ ] Review the commit: `git show HEAD`
+- [ ] Check version and tag are correct
+- [ ] Push changes and tag
+
+After release completes:
 
 - [ ] Build succeeded on all platforms
-- [ ] All binaries are attached to the release
+- [ ] All installers are attached to the release
 - [ ] Release notes are clear and helpful
-- [ ] Version tag is correct
+- [ ] Download and test installers
 - [ ] Users are notified (if applicable)
 
 ---

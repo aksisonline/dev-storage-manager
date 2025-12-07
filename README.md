@@ -4,8 +4,8 @@ A fast desktop app to find and clean up old `node_modules` folders, freeing up g
 
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-[![CI](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/ci.yml)
-[![Release](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/Build%20and%20Release/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/release.yml)
+[![CI](https://github.com/aksisonline/dev-storage-cleaner/workflows/CI/badge.svg)](https://github.com/aksisonline/dev-storage-cleaner/actions/workflows/ci.yml)
+[![Release](https://github.com/aksisonline/dev-storage-cleaner/workflows/Build%20and%20Release/badge.svg)](https://github.com/aksisonline/dev-storage-cleaner/actions/workflows/release.yml)
 
 ## What It Does
 
@@ -32,27 +32,30 @@ Scans your projects directory and identifies `node_modules` folders that haven't
 
 ### Pre-built Binaries (Recommended)
 
-Download the latest release from the [Releases page](https://github.com/YOUR_USERNAME/dev-storage-cleaner/releases):
+Download the latest release from the [Releases page](https://github.com/aksisonline/dev-storage-cleaner/releases):
 
-- **macOS Intel**: `dev-storage-cleaner-macos-x86_64`
-- **macOS Apple Silicon**: `dev-storage-cleaner-macos-aarch64`
-- **Windows**: `dev-storage-cleaner-windows-x86_64.exe`
+- **macOS Intel**: `DevStorageCleaner-macos-x86_64.dmg`
+- **macOS Apple Silicon**: `DevStorageCleaner-macos-aarch64.dmg`
+- **Windows**: `DevStorageCleaner-windows-x86_64.zip`
+
+### Installation Instructions
+
+#### macOS
+
+1. Download the appropriate DMG file for your Mac
+2. Open the DMG file
+3. Drag "Dev Storage Cleaner" to the Applications folder
+4. Launch from Applications
+5. On first launch, right-click the app and select "Open" (security requirement)
+
+#### Windows
+
+1. Download the ZIP file
+2. Extract to any folder
+3. Run `dev-storage-cleaner.exe`
+4. If Windows Defender blocks it, click "More info" → "Run anyway"
 
 ### Manual Build
-
-### macOS
-
-1. Download `DevStorageCleaner.app`
-2. Open the app (Right-click → Open if you see a security warning)
-3. Done!
-
-Optionally, move to Applications folder for easy access.
-
-### Windows
-
-1. Build on Windows (see [Building on Windows](#building-on-windows))
-2. Run `dev-storage-cleaner.exe`
-3. No installation needed - it's portable!
 
 ## How to Use
 
@@ -116,6 +119,8 @@ This project uses automated CI/CD with GitHub Actions:
 **Easy Way (Using the script):**
 
 ```bash
+# The bump script automatically commits and tags for you!
+
 # Bump patch version (0.1.0 -> 0.1.1)
 ./scripts/bump-version.sh patch
 
@@ -125,7 +130,7 @@ This project uses automated CI/CD with GitHub Actions:
 # Bump major version (0.1.0 -> 1.0.0)
 ./scripts/bump-version.sh major
 
-# Then push
+# The script already committed and tagged, just push:
 git push origin main
 git push origin v0.2.0
 ```
@@ -137,17 +142,19 @@ git push origin main
 git push origin v0.2.0
 ```
 
-**Manual Way:**
+**Manual Way (without script):**
 
 1. Update version in `Cargo.toml`
-2. Commit: `git commit -am "Bump version to 0.2.0"`
-3. Tag: `git tag v0.2.0`
-4. Push: `git push origin main && git push origin v0.2.0`
+2. Update lock file: `cargo check`
+3. Commit: `git add Cargo.toml Cargo.lock && git commit -m "Bump version to 0.2.0"`
+4. Tag: `git tag v0.2.0`
+5. Push: `git push origin main && git push origin v0.2.0`
 
 The GitHub Actions workflow will automatically:
-- Build binaries for macOS (Intel + Apple Silicon) and Windows
+- Build DMG installers for macOS (Intel + Apple Silicon)
+- Build ZIP package for Windows
 - Create a GitHub release with auto-generated release notes
-- Upload all binaries as release assets
+- Upload all installers as release assets
 
 See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed documentation.
 
@@ -178,11 +185,16 @@ Project structure:
 
 ## Troubleshooting
 
-**macOS: "App can't be opened"**
+**macOS: "App can't be opened" or "from an unidentified developer"**
 - Right-click the app → Open → Open (first time only)
+- Or: System Preferences → Security & Privacy → Click "Open Anyway"
 
 **Windows: "Windows protected your PC"**
 - Click "More info" → Run anyway
+
+**macOS: DMG won't open**
+- Make sure you downloaded the correct architecture (Intel vs Apple Silicon)
+- Try: Right-click DMG → Open With → DiskImageMounter
 
 **No projects found**
 - Click "Change Directory" and select your projects folder
@@ -204,4 +216,4 @@ The CI workflow will automatically test your changes on all platforms.
 
 **Made by AKS**
 
-> **Note:** Replace `YOUR_USERNAME` in the badge URLs with your actual GitHub username.
+> **Note:** Replace `aksisonline` in the badge URLs with your actual GitHub username.
