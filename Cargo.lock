@@ -1305,7 +1305,7 @@ dependencies = [
 
 [[package]]
 name = "dev-storage-cleaner"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "dirs 5.0.1",
