@@ -4,6 +4,8 @@ A fast desktop app to find and clean up old `node_modules` folders, freeing up g
 
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+[![CI](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/ci.yml)
+[![Release](https://github.com/YOUR_USERNAME/dev-storage-cleaner/workflows/Build%20and%20Release/badge.svg)](https://github.com/YOUR_USERNAME/dev-storage-cleaner/actions/workflows/release.yml)
 
 ## What It Does
 
@@ -27,6 +29,16 @@ Scans your projects directory and identifies `node_modules` folders that haven't
 - 💾 **Persistent Settings** - Remembers your directory between runs
 
 ## Download & Install
+
+### Pre-built Binaries (Recommended)
+
+Download the latest release from the [Releases page](https://github.com/YOUR_USERNAME/dev-storage-cleaner/releases):
+
+- **macOS Intel**: `dev-storage-cleaner-macos-x86_64`
+- **macOS Apple Silicon**: `dev-storage-cleaner-macos-aarch64`
+- **Windows**: `dev-storage-cleaner-windows-x86_64.exe`
+
+### Manual Build
 
 ### macOS
 
@@ -90,6 +102,55 @@ cargo build --release
 scripts\package-windows.bat
 ```
 
+## Development
+
+### Release Process
+
+This project uses automated CI/CD with GitHub Actions:
+
+1. **Continuous Integration**: Every push and PR is automatically tested on macOS, Windows, and Linux
+2. **Automated Releases**: Releases are automatically built and published when you push a version tag
+
+#### Creating a Release
+
+**Easy Way (Using the script):**
+
+```bash
+# Bump patch version (0.1.0 -> 0.1.1)
+./scripts/bump-version.sh patch
+
+# Bump minor version (0.1.0 -> 0.2.0)
+./scripts/bump-version.sh minor
+
+# Bump major version (0.1.0 -> 1.0.0)
+./scripts/bump-version.sh major
+
+# Then push
+git push origin main
+git push origin v0.2.0
+```
+
+**Windows:**
+```powershell
+.\scripts\bump-version.ps1 patch
+git push origin main
+git push origin v0.2.0
+```
+
+**Manual Way:**
+
+1. Update version in `Cargo.toml`
+2. Commit: `git commit -am "Bump version to 0.2.0"`
+3. Tag: `git tag v0.2.0`
+4. Push: `git push origin main && git push origin v0.2.0`
+
+The GitHub Actions workflow will automatically:
+- Build binaries for macOS (Intel + Apple Silicon) and Windows
+- Create a GitHub release with auto-generated release notes
+- Upload all binaries as release assets
+
+See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed documentation.
+
 ## Requirements
 
 - **macOS:** 10.15 (Catalina) or later
@@ -133,4 +194,14 @@ MIT License - Feel free to use and modify.
 
 ---
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+The CI workflow will automatically test your changes on all platforms.
+
+---
+
 **Made by AKS**
+
+> **Note:** Replace `YOUR_USERNAME` in the badge URLs with your actual GitHub username.
