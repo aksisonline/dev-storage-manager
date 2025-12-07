@@ -8,7 +8,10 @@ mod ui;
 
 use app::StorageCleaner;
 
-actions!(app_actions, [Scan, Delete, ToggleProject, UpdateThreshold]);
+actions!(
+    app_actions,
+    [Scan, Delete, ToggleProject, UpdateThreshold, Quit]
+);
 
 impl Render for StorageCleaner {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -19,6 +22,15 @@ impl Render for StorageCleaner {
 fn main() {
     Application::new().run(|cx: &mut App| {
         cx.activate(true);
+
+        // Bind Cmd+Q to quit the application
+        cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+
+        // Handle the Quit action globally
+        cx.on_action(|_: &Quit, cx: &mut App| {
+            cx.quit();
+        });
+
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

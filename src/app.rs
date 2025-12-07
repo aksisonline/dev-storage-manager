@@ -145,23 +145,72 @@ impl StorageCleaner {
     }
 
     pub fn increase_threshold(&mut self) {
-        if self.config.threshold_days < 365 {
-            self.config.threshold_days += 1;
-            let _ = self.config.save();
-            if !self.all_projects.is_empty() {
-                self.apply_filter();
+        if self.all_projects.is_empty() {
+            // No data to snap to, just increment by 1
+            if self.config.threshold_days < 365 {
+                self.config.threshold_days += 1;
+                let _ = self.config.save();
             }
+            return;
         }
+
+        // Get all unique day values from the scanned projects
+        let mut unique_days: Vec<u32> = self
+            .all_projects
+            .iter()
+            .map(|p| p.days_old() as u32)
+            .collect();
+        unique_days.sort_unstable();
+        unique_days.dedup();
+
+        // Find the next value greater than current threshold
+        if let Some(&next_value) = unique_days
+            .iter()
+            .find(|&&days| days > self.config.threshold_days)
+        {
+            self.config.threshold_days = next_value;
+        } else if self.config.threshold_days < 365 {
+            // If no higher value exists, go to 365 (max)
+            self.config.threshold_days = 365;
+        }
+
+        let _ = self.config.save();
+        self.apply_filter();
     }
 
     pub fn decrease_threshold(&mut self) {
-        if self.config.threshold_days > 0 {
-            self.config.threshold_days -= 1;
-            let _ = self.config.save();
-            if !self.all_projects.is_empty() {
-                self.apply_filter();
+        if self.all_projects.is_empty() {
+            // No data to snap to, just decrement by 1
+            if self.config.threshold_days > 0 {
+                self.config.threshold_days -= 1;
+                let _ = self.config.save();
             }
+            return;
         }
+
+        // Get all unique day values from the scanned projects
+        let mut unique_days: Vec<u32> = self
+            .all_projects
+            .iter()
+            .map(|p| p.days_old() as u32)
+            .collect();
+        unique_days.sort_unstable();
+        unique_days.dedup();
+
+        // Find the previous value less than current threshold
+        if let Some(&prev_value) = unique_days
+            .iter()
+            .rev()
+            .find(|&&days| days < self.config.threshold_days)
+        {
+            self.config.threshold_days = prev_value;
+        } else if self.config.threshold_days > 0 {
+            // If no lower value exists, go to 0 (min)
+            self.config.threshold_days = 0;
+        }
+
+        let _ = self.config.save();
+        self.apply_filter();
     }
 
     #[allow(dead_code)]
