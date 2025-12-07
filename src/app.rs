@@ -4,9 +4,13 @@ use std::fs;
 
 pub struct StorageCleaner {
     pub projects: Vec<ProjectInfo>,
+    pub all_projects: Vec<ProjectInfo>, // Cache of all scanned projects
     pub config: Config,
     pub is_scanning: bool,
     pub status_message: String,
+    pub scan_progress: f32,
+    pub current_scan_folder: String,
+    pub threshold_enabled: bool,
 }
 
 impl StorageCleaner {
@@ -16,9 +20,13 @@ impl StorageCleaner {
 
         Self {
             projects: Vec::new(),
+            all_projects: Vec::new(),
             config,
             is_scanning: false,
             status_message,
+            scan_progress: 0.0,
+            current_scan_folder: String::new(),
+            threshold_enabled: true,
         }
     }
 
@@ -33,17 +41,45 @@ impl StorageCleaner {
     }
 
     pub fn scan_for_projects(&mut self) {
+        if self.is_scanning {
+            return; // Prevent multiple scans
+        }
+
         self.is_scanning = true;
         self.projects.clear();
+        self.all_projects.clear();
+        self.scan_progress = 0.0;
+        self.current_scan_folder = String::new();
         self.status_message = format!("Scanning {} ...", self.config.scan_path.display());
 
-        let scanner = Scanner::new(self.config.threshold_days);
-        self.projects = scanner.scan(&self.config.scan_path);
+        // Scan ALL projects regardless of threshold
+        // Note: Synchronous for now - async implementation causes type inference issues with GPUI
+        let scanner = Scanner::new(0);
+        self.all_projects = scanner.scan(&self.config.scan_path);
 
         self.is_scanning = false;
+        self.scan_progress = 1.0;
+        self.current_scan_folder.clear();
+
+        // Apply filter based on current threshold setting
+        self.apply_filter();
+    }
+
+    pub fn apply_filter(&mut self) {
+        if self.threshold_enabled {
+            self.projects = self
+                .all_projects
+                .iter()
+                .filter(|p| p.days_old() >= self.config.threshold_days as u64)
+                .cloned()
+                .collect();
+        } else {
+            self.projects = self.all_projects.clone();
+        }
+
         let total_size_gb: f64 = self.projects.iter().map(|p| p.size_gb()).sum();
         self.status_message = format!(
-            "Found {} old project(s) - Total: {:.2} GB",
+            "Found {} node_modules folder(s) - Total: {:.2} GB",
             self.projects.len(),
             total_size_gb
         );
@@ -79,12 +115,12 @@ impl StorageCleaner {
 
         self.status_message = if failed_count > 0 {
             format!(
-                "✅ Deleted {} project(s) ({:.2} GB freed), ❌ {} failed",
+                "✅ Deleted {} node_modules ({:.2} GB freed), ❌ {} failed",
                 deleted_count, freed_gb, failed_count
             )
         } else {
             format!(
-                "✅ Successfully deleted {} project(s) - Freed {:.2} GB",
+                "✅ Successfully deleted {} node_modules - Freed {:.2} GB",
                 deleted_count, freed_gb
             )
         };
@@ -106,5 +142,43 @@ impl StorageCleaner {
 
     pub fn selected_count(&self) -> usize {
         self.projects.iter().filter(|p| p.selected).count()
+    }
+
+    pub fn increase_threshold(&mut self) {
+        if self.config.threshold_days < 365 {
+            self.config.threshold_days += 1;
+            let _ = self.config.save();
+            if !self.all_projects.is_empty() {
+                self.apply_filter();
+            }
+        }
+    }
+
+    pub fn decrease_threshold(&mut self) {
+        if self.config.threshold_days > 0 {
+            self.config.threshold_days -= 1;
+            let _ = self.config.save();
+            if !self.all_projects.is_empty() {
+                self.apply_filter();
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn set_threshold(&mut self, days: u32) {
+        if days <= 365 {
+            self.config.threshold_days = days;
+            let _ = self.config.save();
+            if !self.all_projects.is_empty() {
+                self.apply_filter();
+            }
+        }
+    }
+
+    pub fn toggle_threshold(&mut self) {
+        self.threshold_enabled = !self.threshold_enabled;
+        if !self.all_projects.is_empty() {
+            self.apply_filter();
+        }
     }
 }

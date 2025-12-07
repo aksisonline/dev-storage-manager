@@ -36,7 +36,19 @@ impl Scanner {
     }
 
     pub fn scan(&self, scan_path: &Path) -> Vec<ProjectInfo> {
+        self.scan_with_progress(scan_path, |_folder, _progress| {})
+    }
+
+    pub fn scan_with_progress<F>(
+        &self,
+        scan_path: &Path,
+        mut progress_callback: F,
+    ) -> Vec<ProjectInfo>
+    where
+        F: FnMut(&str, f32),
+    {
         let mut projects = Vec::new();
+        let mut processed_count = 0;
 
         for entry in WalkDir::new(scan_path)
             .follow_links(false)
@@ -58,6 +70,13 @@ impl Scanner {
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
+
+            // Update progress periodically
+            processed_count += 1;
+            if processed_count % 10 == 0 {
+                let folder_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                progress_callback(folder_name, 0.0); // We don't have total count, just report activity
+            }
 
             // Skip anything that's already inside a node_modules directory (check all ancestors)
             // This prevents recursing into nested node_modules like:
