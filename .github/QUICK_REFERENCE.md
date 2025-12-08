@@ -4,22 +4,12 @@
 
 ### Create a Release
 
-```bash
-# Automatic (recommended)
-# The script automatically commits and tags for you!
-./scripts/bump-version.sh patch    # 0.1.0 → 0.1.1
-./scripts/bump-version.sh minor    # 0.1.0 → 0.2.0
-./scripts/bump-version.sh major    # 0.1.0 → 1.0.0
+1. Update the version in `Cargo.toml`.
+2. Refresh `Cargo.lock` by running `cargo check`.
+3. Commit the version bump (`git add Cargo.toml Cargo.lock && git commit -m "Bump version to <version>"`).
+4. Tag the commit (`git tag v<version>`).
+5. Push `main` and the tag (`git push origin main && git push origin v<version>`).
 
-# The script already committed and tagged, just push:
-git push origin main
-git push origin v0.x.x
-
-# Windows
-.\scripts\bump-version.ps1 patch
-git push origin main
-git push origin v0.x.x
-```
 
 ### Manual Release (Without Script)
 
@@ -151,14 +141,14 @@ gh run rerun <run-id>
 .github/workflows/release.yml     # Release workflow
 .github/RELEASE_GUIDE.md          # Detailed guide
 .github/SETUP.md                  # Setup documentation
-scripts/bump-version.sh           # Version bump (Unix)
-scripts/bump-version.ps1          # Version bump (Windows)
 CHANGELOG.md                      # Version history
+Cargo.toml                        # Project metadata / version
+Cargo.lock                        # Locked dependency versions
 ```
 
 ## 🎯 Release Checklist
 
-Before running bump script:
+Before tagging a release:
 - [ ] All tests pass locally (`cargo test`)
 - [ ] CHANGELOG.md updated
 - [ ] Code formatted (`cargo fmt`)
@@ -167,27 +157,26 @@ Before running bump script:
 - [ ] On `main` branch
 - [ ] Pulled latest changes
 
-After running bump script:
+After tagging a release:
 - [ ] Review the commit: `git show HEAD`
-- [ ] Push to trigger release
+- [ ] Push `main` and the tag to trigger the workflow
 
 ## 📊 Build Times
 
 | OS | Build Time | Billed Minutes |
 |----|------------|----------------|
-| macOS (2 DMG builds) | ~8-10 min | 80-100 min |
-| Windows (1 ZIP) | ~3-4 min | 6-8 min |
-| **Total per release** | **~11-14 min** | **~86-108 min** |
+| macOS (single ZIP) | ~4-5 min | 40-50 min |
+| Windows (single ZIP) | ~3-4 min | 6-8 min |
+| **Total per release** | **~7-9 min** | **~46-58 min** |
 
-**Free tier:** 2,000 minutes/month → ~18-23 releases/month
+**Free tier:** 2,000 minutes/month → ~20-26 releases/month
 
 ## 🔗 Quick Links
 
 ### Release Files
 
-- macOS Intel: `DevStorageCleaner-macos-x86_64.dmg`
-- macOS Apple Silicon: `DevStorageCleaner-macos-aarch64.dmg`
-- Windows: `DevStorageCleaner-windows-x86_64.zip`
+- macOS: `dev-storage-cleaner-macos-<version>.zip`
+- Windows x86_64: `dev-storage-cleaner-windows-x86_64-<version>.zip`
 
 ### Repository Links
 
@@ -198,12 +187,12 @@ After running bump script:
 
 ## 💡 Tips
 
-1. **The bump script commits and tags automatically** - no need to commit first
-2. **Always test locally before running bump script**
-3. **Update CHANGELOG.md before bumping version**
-4. **Use semantic versioning** (patch/minor/major)
-5. **Check Actions tab after pushing tags**
-6. **Review the commit before pushing** (`git show HEAD`)
+1. **Bump versions manually** in `Cargo.toml` and regenerate `Cargo.lock` with `cargo check` before tagging.
+2. **Run the local quality gate** (`cargo fmt`, `cargo clippy`, `cargo test`) before every release tag.
+3. **Update and review `CHANGELOG.md`** so release notes stay accurate.
+4. **Use semantic versioning** (patch/minor/major) and tag as `v<version>`.
+5. **Push both `main` and the tag** so the workflow can build macOS and Windows artifacts.
+6. **Monitor the Actions tab** to confirm the release completed successfully.
 
 ## 🆘 Emergency Commands
 

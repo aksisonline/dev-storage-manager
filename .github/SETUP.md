@@ -16,9 +16,6 @@ dev-storage-cleaner/
 │   ├── RELEASE_GUIDE.md        # Step-by-step release guide
 │   ├── RELEASE_TEMPLATE.md     # Template for release notes
 │   └── SETUP.md                # This file
-├── scripts/
-│   ├── bump-version.sh         # Version bump script (macOS/Linux)
-│   └── bump-version.ps1        # Version bump script (Windows)
 └── CHANGELOG.md                # Project changelog
 ```
 
@@ -52,20 +49,12 @@ dev-storage-cleaner/
 - **Manual:** Workflow dispatch with version input
 
 **What it does:**
-1. **Build Job:** Compiles binaries for:
-   - macOS Intel (x86_64)
-   - macOS Apple Silicon (aarch64)
-   - Windows 64-bit
-
-2. **Create Release Job:**
-   - Downloads all build artifacts
-   - Creates GitHub release
-   - Auto-generates release notes
-   - Attaches all binaries
-
-3. **Verify Job:**
-   - Confirms release was created
-   - Lists release assets
+1. **Build macOS Job:** Runs `cargo build --release` on the macOS runner and bundles `dev-storage-cleaner` plus docs into `dev-storage-cleaner-macos-<version>.zip`.
+2. **Build Windows Job:** Runs `cargo build --release` on Windows, grabs `dev-storage-cleaner.exe`, and zips it as `dev-storage-cleaner-windows-x86_64-<version>.zip`.
+3. **Create Release Job:**
+   - Downloads the two ZIP artifacts
+   - Generates concise release notes
+   - Publishes the GitHub release with both ZIPs attached
 
 **Build time:** ~5-10 minutes per release
 
@@ -78,22 +67,20 @@ dev-storage-cleaner/
 git checkout main
 git pull
 
-# 2. Use the bump version script
-./scripts/bump-version.sh patch  # or 'minor' or 'major'
+# 2. Update version in Cargo.toml and regenerate Cargo.lock
+#    (cargo check will refresh the lock file)
+$EDITOR Cargo.toml
+cargo check
 
-# 3. Push changes and tag
+# 3. Commit, tag, and push
+git add Cargo.toml Cargo.lock
+git commit -m "Bump version to 0.1.1"
+git tag v0.1.1
 git push origin main
-git push origin v0.1.1  # Use the version from step 2
+git push origin v0.1.1
 
 # 4. Watch the magic happen!
 # Go to: https://github.com/aksisonline/dev-storage-cleaner/actions
-```
-
-### Windows Users
-
-```powershell
-# Step 2 becomes:
-.\scripts\bump-version.ps1 patch
 ```
 
 ## ⚙️ Configuration Required
@@ -144,7 +131,16 @@ View results at: `https://github.com/aksisonline/dev-storage-cleaner/actions`
 **Option 1: Tag-based (Recommended)**
 
 ```bash
-./scripts/bump-version.sh [patch|minor|major]
+# Manually bump version
+$EDITOR Cargo.toml
+cargo check
+
+# Commit and tag
+git add Cargo.toml Cargo.lock
+git commit -m "Bump version to v0.x.x"
+git tag v0.x.x
+
+# Push to trigger release
 git push origin main
 git push origin v0.x.x
 ```
@@ -163,9 +159,8 @@ Each release includes three installers:
 
 | Platform | File Name | Target | Format |
 |----------|-----------|--------|--------|
-| macOS Intel | `DevStorageCleaner-macos-x86_64.dmg` | x86_64-apple-darwin | DMG installer |
-| macOS Apple Silicon | `DevStorageCleaner-macos-aarch64.dmg` | aarch64-apple-darwin | DMG installer |
-| Windows 64-bit | `DevStorageCleaner-windows-x86_64.zip` | x86_64-pc-windows-msvc | ZIP package |
+| macOS | `dev-storage-cleaner-macos-<version>.zip` | Host macOS target | ZIP (binary + docs) |
+| Windows x86_64 | `dev-storage-cleaner-windows-x86_64-<version>.zip` | x86_64-pc-windows-msvc | ZIP (exe + docs) |
 
 ## 🔍 Monitoring Builds
 
@@ -185,10 +180,10 @@ open "https://github.com/aksisonline/dev-storage-cleaner/actions"
 ### Common Build Times
 
 - **CI workflow:** ~3-5 minutes
-- **Release workflow:** ~8-12 minutes
-  - macOS builds: ~4-5 minutes each (includes .app + DMG creation)
-  - Windows build: ~3-4 minutes (includes ZIP packaging)
-  - Release creation: ~1-2 minutes
+- **Release workflow:** ~7-9 minutes
+  - macOS build: ~4-5 minutes (cargo build + ZIP packaging)
+  - Windows build: ~3-4 minutes (cargo build + ZIP packaging)
+  - Release creation: ~1 minute
 
 ## 💰 Cost Considerations
 
@@ -197,11 +192,11 @@ open "https://github.com/aksisonline/dev-storage-cleaner/actions"
 - ✅ Unlimited build minutes on Linux
 
 **Usage per release:**
-- macOS builds (2 DMGs): ~8-10 minutes × 10 = 80-100 billed minutes
-- Windows build (1 ZIP): ~3-4 minutes × 2 = 6-8 billed minutes
-- **Total:** ~86-108 billed minutes per release
+- macOS build (single ZIP): ~4-5 minutes × 10 = 40-50 billed minutes
+- Windows build (single ZIP): ~3-4 minutes × 2 = 6-8 billed minutes
+- **Total:** ~46-58 billed minutes per release
 
-**You can do ~18-23 releases per month on the free tier.**
+**You can do ~20-26 releases per month on the free tier.**
 
 ## 🛠️ Customization
 
@@ -353,8 +348,8 @@ After setup, you should:
 - [ ] Update repository permissions
 - [ ] Test CI workflow with a dummy commit
 - [ ] Create first release (can be v0.1.0)
-- [ ] Verify installers are attached (DMGs and ZIP)
-- [ ] Download and test installers on each platform
+- [ ] Verify both macOS and Windows ZIP artifacts are attached
+- [ ] Download and test each platform’s ZIP locally
 - [ ] Update README badges to show actual status
 
 ## 🤝 Contributing
@@ -362,7 +357,7 @@ After setup, you should:
 With this setup:
 - Contributors can see CI status on PRs
 - Maintainers can release with one command
-- Users get professional installers (DMG for macOS, ZIP for Windows)
+- Users get portable ZIP distributions for macOS and Windows
 - Everything is automated and reproducible
 
 ## 📞 Support
@@ -395,7 +390,7 @@ The workflows:
    - Create Windows MSI installer (currently using ZIP)
    - Add Linux builds (AppImage, .deb, .rpm)
    - Set up changelog automation
-   - Add custom DMG background image
+   - Explore richer macOS packaging (e.g., notarized app bundle or branded ZIP)
 
 3. **Later:**
    - Add performance benchmarks

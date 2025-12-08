@@ -26,21 +26,16 @@ This directory contains automated workflows for building, testing, and releasing
 - **Manual**: Workflow dispatch with version input
 
 **Jobs:**
-- **Build macOS Job:** Creates DMG installers for:
-  - macOS x86_64 (Intel) - Full .app bundle in DMG
-  - macOS aarch64 (Apple Silicon) - Full .app bundle in DMG
-- **Build Windows Job:** Creates portable package:
-  - Windows x86_64 - ZIP with executable and docs
+- **Build macOS Job:** Runs `cargo build --release` on the macOS host and zips the binary plus docs into `dev-storage-cleaner-macos-<version>.zip`.
+- **Build Windows Job:** Runs `cargo build --release` on Windows x86_64 and creates a ZIP that includes `dev-storage-cleaner.exe` and docs.
 - **Create Release**: 
   - Downloads all build artifacts
   - Creates a GitHub release with auto-generated release notes
-  - Attaches all platform binaries as release assets
-- **Verify Release**: Confirms the release was created successfully
+  - Attaches all platform packages as release assets
 
 **Build Outputs:**
-- `DevStorageCleaner-macos-x86_64.dmg` - macOS Intel installer (DMG)
-- `DevStorageCleaner-macos-aarch64.dmg` - macOS Apple Silicon installer (DMG)
-- `DevStorageCleaner-windows-x86_64.zip` - Windows portable package (ZIP)
+- `dev-storage-cleaner-macos-<version>.zip` - macOS host build (ZIP)
+- `dev-storage-cleaner-windows-x86_64-<version>.zip` - Windows portable package (ZIP)
 
 ## Creating a Release
 
@@ -111,8 +106,7 @@ These are automatically provided via `GITHUB_TOKEN` in GitHub Actions.
   - Missing system dependencies (rare for Rust)
   - Platform-specific code issues
   - Dependency compilation failures
-  - DMG creation issues (macOS): Check if scripts have execute permissions
-  - ZIP creation issues (Windows): PowerShell errors
+  - ZIP creation issues: Check if zip/Compress-Archive tools are available
 
 **Issue**: Release creation fails
 - Ensure the tag follows the `v*.*.*` pattern
@@ -196,26 +190,25 @@ Replace `aksisonline` with your GitHub username.
   - Windows: 2x
 
 Each release build uses approximately:
-- macOS (2 DMG builds): ~15-20 minutes (150-200 billed minutes)
-  - Includes: cargo build + .app bundling + DMG creation
-- Windows (1 ZIP build): ~10-15 minutes (20-30 billed minutes)
+- macOS (single ZIP build): ~4-5 minutes (40-50 billed minutes)
   - Includes: cargo build + ZIP packaging
-- Total per release: ~25-35 actual minutes (~170-230 billed minutes)
+- Windows (single ZIP build): ~3-4 minutes (6-8 billed minutes)
+  - Includes: cargo build + ZIP packaging
+- Total per release: ~7-9 actual minutes (~46-58 billed minutes)
 
 ## Future Enhancements
 
 Potential improvements to consider:
 
 1. **Code Signing**: Add macOS code signing and Windows code signing
-2. **Notarization**: Notarize macOS DMG builds with Apple
-3. **Windows Installer**: Create `.msi` installer (currently using `.zip`)
+2. **Notarization**: Notarize macOS builds with Apple
+3. **Installers**: Create `.dmg` for macOS and `.msi` for Windows
 4. **Linux Support**: Add Linux builds (AppImage, .deb, .rpm)
 5. **Changelog Automation**: Auto-generate CHANGELOG.md from commits
 6. **Pre-release Builds**: Add beta/alpha release support
 7. **Performance Benchmarks**: Add benchmark tracking across releases
 8. **Security Scanning**: Integrate dependency vulnerability scanning
-9. **Custom DMG Background**: Add custom background image to DMG installers
-10. **Auto-update**: Implement in-app update checking
+9. **Auto-update**: Implement in-app update checking
 
 ## Resources
 

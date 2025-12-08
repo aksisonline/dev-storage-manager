@@ -21,27 +21,24 @@
 
 ## 📦 Downloads
 
-Download the appropriate installer for your platform:
+Download the appropriate package for your platform:
 
 ### macOS
-- **Intel Macs**: `DevStorageCleaner-macos-x86_64.dmg`
-- **Apple Silicon (M1/M2/M3)**: `DevStorageCleaner-macos-aarch64.dmg`
+- `dev-storage-cleaner-macos-{VERSION}.zip`
 
 ### Windows
-- **64-bit**: `DevStorageCleaner-windows-x86_64.zip`
+- `dev-storage-cleaner-windows-x86_64-{VERSION}.zip`
 
 ## 📋 Installation
 
 ### macOS
-1. Download the appropriate DMG file for your Mac
-2. Open the DMG file (double-click)
-3. Drag "Dev Storage Cleaner" to the Applications folder
-4. Launch from Applications
-5. On first launch, right-click the app and select "Open" (security requirement)
-6. Optionally, eject the DMG after installation
+1. Download the macOS ZIP file
+2. Extract the ZIP file
+3. Run the `dev-storage-cleaner` executable
+4. On first launch, right-click the app and select "Open" (security requirement)
 
 ### Windows
-1. Download `DevStorageCleaner-windows-x86_64.zip`
+1. Download the ZIP file
 2. Extract the ZIP file to any folder
 3. Run `dev-storage-cleaner.exe`
 4. If Windows Defender blocks it, click "More info" → "Run anyway"

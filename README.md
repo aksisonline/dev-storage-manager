@@ -34,19 +34,17 @@ Scans your projects directory and identifies `node_modules` folders that haven't
 
 Download the latest release from the [Releases page](https://github.com/aksisonline/dev-storage-cleaner/releases):
 
-- **macOS Intel**: `DevStorageCleaner-macos-x86_64.dmg`
-- **macOS Apple Silicon**: `DevStorageCleaner-macos-aarch64.dmg`
-- **Windows**: `DevStorageCleaner-windows-x86_64.zip`
+- **macOS**: `dev-storage-cleaner-macos-<version>.zip`
+- **Windows**: `dev-storage-cleaner-windows-x86_64-<version>.zip`
 
 ### Installation Instructions
 
 #### macOS
 
-1. Download the appropriate DMG file for your Mac
-2. Open the DMG file
-3. Drag "Dev Storage Cleaner" to the Applications folder
-4. Launch from Applications
-5. On first launch, right-click the app and select "Open" (security requirement)
+1. Download the macOS ZIP file
+2. Extract the ZIP file
+3. Run the `dev-storage-cleaner` executable
+4. On first launch, right-click the app and select "Open" (security requirement)
 
 #### Windows
 
@@ -54,8 +52,6 @@ Download the latest release from the [Releases page](https://github.com/aksisonl
 2. Extract to any folder
 3. Run `dev-storage-cleaner.exe`
 4. If Windows Defender blocks it, click "More info" → "Run anyway"
-
-### Manual Build
 
 ## How to Use
 
@@ -82,27 +78,22 @@ The app remembers your directory choice for next time!
 ### macOS
 
 ```bash
-# Install dependencies
-./scripts/setup-macos.sh
+# Install Rust if you don't already have it: https://rustup.rs/
+cargo build --release
 
-# Build the app
-./scripts/build-macos-app.sh
-
-# Run it
-open DevStorageCleaner.app
+# Run the release binary
+./target/release/dev-storage-cleaner
 ```
 
 ### Windows
 
-1. Install [Rust](https://rustup.rs/)
-2. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with C++ workload
-3. Open "Developer Command Prompt for VS"
-4. Run:
+1. Install [Rust](https://rustup.rs/) (MSVC toolchain)
+2. Open "Developer Command Prompt for VS" or PowerShell
+3. Build and run:
 
-```batch
-cd dev-storage-cleaner
+```powershell
 cargo build --release
-scripts\package-windows.bat
+.\target\release\dev-storage-cleaner.exe
 ```
 
 ## Development
@@ -116,45 +107,19 @@ This project uses automated CI/CD with GitHub Actions:
 
 #### Creating a Release
 
-**Easy Way (Using the script):**
+Follow these manual steps:
 
-```bash
-# The bump script automatically commits and tags for you!
-
-# Bump patch version (0.1.0 -> 0.1.1)
-./scripts/bump-version.sh patch
-
-# Bump minor version (0.1.0 -> 0.2.0)
-./scripts/bump-version.sh minor
-
-# Bump major version (0.1.0 -> 1.0.0)
-./scripts/bump-version.sh major
-
-# The script already committed and tagged, just push:
-git push origin main
-git push origin v0.2.0
-```
-
-**Windows:**
-```powershell
-.\scripts\bump-version.ps1 patch
-git push origin main
-git push origin v0.2.0
-```
-
-**Manual Way (without script):**
-
-1. Update version in `Cargo.toml`
-2. Update lock file: `cargo check`
-3. Commit: `git add Cargo.toml Cargo.lock && git commit -m "Bump version to 0.2.0"`
-4. Tag: `git tag v0.2.0`
-5. Push: `git push origin main && git push origin v0.2.0`
+1. Update version in `Cargo.toml`.
+2. Refresh `Cargo.lock`: `cargo check`.
+3. Commit the changes: `git add Cargo.toml Cargo.lock && git commit -m "Bump version to 0.2.0"`.
+4. Tag the release: `git tag v0.2.0`.
+5. Push main and the tag: `git push origin main && git push origin v0.2.0`.
 
 The GitHub Actions workflow will automatically:
-- Build DMG installers for macOS (Intel + Apple Silicon)
-- Build ZIP package for Windows
+- Build a ZIP package for macOS
+- Build a ZIP package for Windows x86_64
 - Create a GitHub release with auto-generated release notes
-- Upload all installers as release assets
+- Upload both packages as release assets
 
 See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed documentation.
 
@@ -191,10 +156,6 @@ Project structure:
 
 **Windows: "Windows protected your PC"**
 - Click "More info" → Run anyway
-
-**macOS: DMG won't open**
-- Make sure you downloaded the correct architecture (Intel vs Apple Silicon)
-- Try: Right-click DMG → Open With → DiskImageMounter
 
 **No projects found**
 - Click "Change Directory" and select your projects folder

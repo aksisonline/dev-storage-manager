@@ -1,260 +1,131 @@
-# Release Workflow Diagram
+# Release Workflow Diagram (Manual Cargo Process)
 
-## 🎯 Quick Visual Guide: How Releases Work
-
-### 📊 The Full Process
+## 🎯 Big Picture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     LOCAL DEVELOPMENT                            │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                    LOCAL DEVELOPMENT                       │
+└────────────────────────────────────────────────────────────┘
 
-  1. Make changes to your code
-     └─> cargo test
-     └─> cargo clippy
-     └─> cargo fmt --all
-     └─> git add . && git commit -m "Add feature X"
+1. Build quality gate
+   └─> cargo fmt --all
+   └─> cargo clippy -- -D warnings
+   └─> cargo test
+   └─> cargo build --release
 
-  2. Update CHANGELOG.md
-     └─> Document your changes
-     └─> git add CHANGELOG.md
-     └─> git commit -m "Update CHANGELOG for v0.2.0"
+2. Update docs
+   └─> Edit CHANGELOG.md + README.md
+   └─> git commit -m "Update docs for vX.Y.Z"
 
-  3. Run bump script
-     └─> ./scripts/bump-version.sh patch
-         │
-         ├─> Updates Cargo.toml
-         ├─> Updates Cargo.lock
-         ├─> Creates commit: "Bump version to 0.2.0"
-         └─> Creates tag: v0.2.0
-         
-     ⚠️  THE SCRIPT COMMITS & TAGS AUTOMATICALLY!
-         You DON'T need to commit manually!
+3. Bump version manually
+   └─> Edit Cargo.toml (version = "X.Y.Z")
+   └─> cargo check              # refreshes Cargo.lock
+   └─> git add Cargo.toml Cargo.lock
+   └─> git commit -m "Bump version to X.Y.Z"
 
-  4. Review the commit
-     └─> git show HEAD
-     └─> Check version numbers are correct
+4. Tag release
+   └─> git tag -a vX.Y.Z -m "Release X.Y.Z"
 
-  5. Push to GitHub
-     └─> git push origin main
-     └─> git push origin v0.2.0
+5. Push
+   └─> git push origin main
+   └─> git push origin vX.Y.Z   # triggers GitHub Actions
+```
 
-         ⬇️  Tag push triggers GitHub Actions
+```
+┌────────────────────────────────────────────────────────────┐
+│                    GITHUB ACTIONS                          │
+└────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     GITHUB ACTIONS                               │
-└─────────────────────────────────────────────────────────────────┘
+  ┌───────────────────────────────────────────────────────┐
+  │  build-macos                                          │
+  ├───────────────────────────────────────────────────────┤
+  │  1. cargo build --release                              │
+  │  2. Copy target/release/dev-storage-cleaner            │
+  │  3. Add README + LICENSE into dist/                    │
+  │  4. Zip → dev-storage-cleaner-macos-<ver>.zip          │
+  │  5. Upload artifact                                    │
+  └───────────────────────────────────────────────────────┘
 
-  ┌──────────────────────────────────────────────────────────────┐
-  │  BUILD MACOS (Parallel)                                       │
-  ├──────────────────────────────────────────────────────────────┤
-  │                                                               │
-  │  ┌─────────────────────┐    ┌─────────────────────┐         │
-  │  │  Intel (x86_64)     │    │  Apple Silicon      │         │
-  │  │                     │    │  (aarch64)          │         │
-  │  ├─────────────────────┤    ├─────────────────────┤         │
-  │  │ 1. cargo build      │    │ 1. cargo build      │         │
-  │  │ 2. create-macos-app │    │ 2. create-macos-app │         │
-  │  │ 3. create-dmg       │    │ 3. create-dmg       │         │
-  │  │ 4. Upload artifact  │    │ 4. Upload artifact  │         │
-  │  └─────────────────────┘    └─────────────────────┘         │
-  │         │                           │                        │
-  │         └───────────┬───────────────┘                        │
-  │                     ▼                                        │
-  │   DevStorageCleaner-macos-x86_64.dmg                        │
-  │   DevStorageCleaner-macos-aarch64.dmg                       │
-  └──────────────────────────────────────────────────────────────┘
+  ┌───────────────────────────────────────────────────────┐
+  │  build-windows                                        │
+  ├───────────────────────────────────────────────────────┤
+  │  1. cargo build --release                              │
+  │  2. Copy target\release\dev-storage-cleaner.exe        │
+  │  3. Add README + LICENSE into dist\                    │
+  │  4. Zip → dev-storage-cleaner-windows-x86_64-<ver>.zip │
+  │  5. Upload artifact                                    │
+  └───────────────────────────────────────────────────────┘
 
-  ┌──────────────────────────────────────────────────────────────┐
-  │  BUILD WINDOWS                                                │
-  ├──────────────────────────────────────────────────────────────┤
-  │                                                               │
-  │  ┌─────────────────────┐                                     │
-  │  │  x86_64             │                                     │
-  │  │                     │                                     │
-  │  ├─────────────────────┤                                     │
-  │  │ 1. cargo build      │                                     │
-  │  │ 2. Create dist/     │                                     │
-  │  │ 3. Compress to ZIP  │                                     │
-  │  │ 4. Upload artifact  │                                     │
-  │  └─────────────────────┘                                     │
-  │         │                                                    │
-  │         ▼                                                    │
-  │   DevStorageCleaner-windows-x86_64.zip                      │
-  └──────────────────────────────────────────────────────────────┘
+  ┌───────────────────────────────────────────────────────┐
+  │  create-release                                       │
+  ├───────────────────────────────────────────────────────┤
+  │  1. Download artifacts                                │
+  │  2. Generate brief release_notes.md                   │
+  │  3. Publish GitHub release vX.Y.Z                     │
+  │  4. Attach both ZIP files                             │
+  └───────────────────────────────────────────────────────┘
+```
 
-         │                    │
-         └────────┬───────────┘
-                  ▼
-  ┌──────────────────────────────────────────────────────────────┐
-  │  CREATE RELEASE                                               │
-  ├──────────────────────────────────────────────────────────────┤
-  │  1. Download all artifacts                                   │
-  │  2. Generate release notes                                   │
-  │  3. Create GitHub Release v0.2.0                            │
-  │  4. Attach all DMG and ZIP files                            │
-  │  5. Publish release                                         │
-  └──────────────────────────────────────────────────────────────┘
-                  │
-                  ▼
-  ┌──────────────────────────────────────────────────────────────┐
-  │  VERIFY RELEASE                                               │
-  ├──────────────────────────────────────────────────────────────┤
-  │  ✅ Check release exists                                     │
-  │  ✅ List all assets                                          │
-  │  ✅ Display release URL                                      │
-  └──────────────────────────────────────────────────────────────┘
+```
+┌────────────────────────────────────────────────────────────┐
+│                    USERS DOWNLOAD                          │
+└────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     USERS DOWNLOAD                               │
-└─────────────────────────────────────────────────────────────────┘
+🍎 macOS
+  • Download dev-storage-cleaner-macos-<ver>.zip
+  • unzip
+  • ./dev-storage-cleaner
 
-  🍎 macOS Users:
-     1. Download appropriate DMG
-     2. Open DMG file
-     3. Drag app to Applications folder
-     4. Done!
-
-  🪟 Windows Users:
-     1. Download ZIP file
-     2. Extract to any folder
-     3. Run dev-storage-cleaner.exe
-     4. Done!
+🪟 Windows
+  • Download dev-storage-cleaner-windows-x86_64-<ver>.zip
+  • Extract all
+  • Run dev-storage-cleaner.exe
 ```
 
 ---
 
-## 🔄 What the Bump Script Does
+## 🔄 Manual Release Checklist
 
-```
-YOU RUN:
-  ./scripts/bump-version.sh patch
-
-SCRIPT DOES AUTOMATICALLY:
-  ┌──────────────────────────────────────────┐
-  │ 1. ✅ Update Cargo.toml                  │
-  │    version = "0.1.0" → "0.1.1"          │
-  │                                          │
-  │ 2. ✅ Update Cargo.lock                  │
-  │    cargo check --quiet                   │
-  │                                          │
-  │ 3. ✅ Create Git Commit                  │
-  │    git add Cargo.toml Cargo.lock        │
-  │    git commit -m "Bump version to 0.1.1"│
-  │                                          │
-  │ 4. ✅ Create Git Tag                     │
-  │    git tag -a v0.1.1 -m "Release 0.1.1" │
-  └──────────────────────────────────────────┘
-
-THEN YOU:
-  ┌──────────────────────────────────────────┐
-  │ 1. Review the commit (optional)          │
-  │    git show HEAD                         │
-  │                                          │
-  │ 2. Push changes                          │
-  │    git push origin main                  │
-  │                                          │
-  │ 3. Push tag (triggers release)           │
-  │    git push origin v0.1.1                │
-  └──────────────────────────────────────────┘
-```
+| Step | Command | Notes |
+|------|---------|-------|
+| Run quality gate | `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build --release` | Ensures tag reflects healthy build |
+| Update docs | `git commit -m "Update CHANGELOG for vX.Y.Z"` | Keep changelog + README aligned |
+| Bump version | Edit `Cargo.toml` → `cargo check` → commit | `cargo check` rewrites `Cargo.lock` |
+| Tag | `git tag -a vX.Y.Z -m "Release X.Y.Z"` | Annotated tag recommended |
+| Push | `git push origin main && git push origin vX.Y.Z` | Tag push triggers workflow |
+| Verify | Watch Actions → Download ZIPs → smoke test | Should finish in ~7–9 minutes |
 
 ---
 
-## ⚠️ Common Mistakes
+## ⚠️ Common Mistakes & Fixes
 
-### ❌ WRONG - Committing Before Bump Script
-
-```bash
-# DON'T DO THIS:
-vim Cargo.toml                         # Edit manually
-git add Cargo.toml
-git commit -m "Bump version to 0.2.0"  # ❌ Manual commit
-./scripts/bump-version.sh patch        # ❌ Script fails or creates duplicate commit
-```
-
-### ✅ CORRECT - Let Script Handle Version Commits
-
-```bash
-# DO THIS:
-# 1. Commit your features first
-git add src/
-git commit -m "Add awesome feature"
-
-# 2. Update and commit CHANGELOG
-vim CHANGELOG.md
-git add CHANGELOG.md
-git commit -m "Update CHANGELOG for v0.2.0"
-
-# 3. Let the script handle version changes
-./scripts/bump-version.sh patch        # ✅ Script commits version automatically
-
-# 4. Push everything
-git push origin main
-git push origin v0.2.0
-```
+| Mistake | Why it hurts | Fix |
+|---------|--------------|-----|
+| Forgetting `cargo check` after editing `Cargo.toml` | `Cargo.lock` still points to old version | Always run `cargo check` (or `cargo metadata`) before committing |
+| Tagging before committing changelog/docs | Release notes disagree with contents | Commit docs **before** version bump commit |
+| Wrong tag format (`1.2.3` instead of `v1.2.3`) | Workflow never triggers | Always prefix with `v` |
+| Pushing tag but not main | Release uses outdated code | Push `main` first, then the tag |
 
 ---
 
-## 📝 Timeline Example
+## 🧭 Timeline Example (v0.4.2)
 
-**Real-world example of creating v0.2.0:**
-
-```
-10:00 AM - Code new feature
-10:30 AM - Run tests: cargo test ✅
-10:35 AM - Check lints: cargo clippy ✅
-10:40 AM - Format code: cargo fmt --all ✅
-10:45 AM - Commit feature: git commit -m "Add dark mode support"
-
-10:50 AM - Update CHANGELOG.md
-10:55 AM - Commit CHANGELOG: git commit -m "Update CHANGELOG for v0.2.0"
-
-11:00 AM - Run bump script: ./scripts/bump-version.sh minor
-           └─> Script updates Cargo files
-           └─> Script creates commit "Bump version to 0.2.0"
-           └─> Script creates tag v0.2.0
-           └─> Script tells you what to do next
-
-11:01 AM - Review commit: git show HEAD ✅
-11:02 AM - Push main: git push origin main
-11:03 AM - Push tag: git push origin v0.2.0 🚀
-
-11:03 AM - GitHub Actions triggered
-11:05 AM - macOS builds start (parallel)
-11:08 AM - Windows build starts
-11:12 AM - All builds complete
-11:13 AM - Release created with all assets
-11:14 AM - Release verified ✅
-
-11:15 AM - Users can download! 🎉
-```
-
-**Total time from bump to release: ~12 minutes**
+1. 09:00 – Finish feature, run `cargo fmt/clippy/test`
+2. 09:10 – Update `CHANGELOG.md`, commit docs
+3. 09:15 – Edit `Cargo.toml`, run `cargo check`, commit bump
+4. 09:17 – `git tag -a v0.4.2 -m "Release 0.4.2"`
+5. 09:18 – `git push origin main && git push origin v0.4.2`
+6. 09:20 – Monitor Actions (macOS + Windows)
+7. 09:27 – Release published, download ZIPs, quick smoke test
+8. 09:30 – Share release link 🎉
 
 ---
 
-## 🎯 Key Takeaways
+## 🧰 Optional Future Enhancements
 
-1. ✅ **The bump script commits and tags automatically**
-2. ✅ **Commit your features BEFORE running the bump script**
-3. ✅ **Update CHANGELOG.md BEFORE running the bump script**
-4. ✅ **Don't manually edit version in Cargo.toml - use the script**
-5. ✅ **Review the commit after bump: `git show HEAD`**
-6. ✅ **Push tag to trigger release: `git push origin v0.x.x`**
+1. Add Linux job mirroring macOS packaging
+2. Insert signing/notarization steps before zipping
+3. Extend release notes generation with changelog diff
+4. Integrate Slack/Discord notification after publish
 
----
-
-## 🆘 Quick Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| Script says "uncommitted changes" | Commit your work first, then run script |
-| Wrong version created | Delete tag, fix Cargo.toml, run script again |
-| Push failed | Pull latest changes first: `git pull origin main` |
-| Workflow didn't trigger | Check tag format: must be `v1.2.3` (with 'v') |
-| Build failed | Check Actions tab for logs, fix issue, create new version |
-
----
-
-**Remember:** The bump script is your friend! It automates the tedious parts so you can focus on building great features. 🚀
+Stay disciplined with this manual flow and every release remains transparent, reproducible, and entirely Cargo-driven. 🚀

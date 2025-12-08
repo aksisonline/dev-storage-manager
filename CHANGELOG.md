@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - GitHub Actions CI/CD workflows for automated building and releases
-- Automated release creation for macOS (Intel + Apple Silicon) and Windows
-- Version bump scripts (`bump-version.sh` and `bump-version.ps1`)
+- Simplified release process that uses plain `cargo build --release` to produce a single macOS ZIP and a Windows ZIP
+- Manual version bump instructions captured in the docs (no helper scripts)
 - CI workflow for automated testing across platforms
 
 ### Changed

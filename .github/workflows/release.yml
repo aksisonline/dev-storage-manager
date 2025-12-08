@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number (e.g., 0.1.0)"
+        description: "Version number (e.g., 0.3.0)"
         required: true
         type: string
 
@@ -16,264 +16,142 @@ env:
 
 jobs:
   build-macos:
-    name: Build macOS ${{ matrix.arch }}
+    name: Build macOS
     runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-apple-darwin
-            arch: x86_64
-            asset_name: DevStorageCleaner-macos-x86_64.dmg
-          - target: aarch64-apple-darwin
-            arch: aarch64
-            asset_name: DevStorageCleaner-macos-aarch64.dmg
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-${{ matrix.target }}-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-target-
-
-      - name: Extract version
+      - name: Determine version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            tag="${GITHUB_REF#refs/tags/}"
+            echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release
 
-      - name: Create .app bundle
+      - name: Package macOS build
         run: |
-          chmod +x scripts/create-macos-app.sh
-          ./scripts/create-macos-app.sh \
-            target/${{ matrix.target }}/release/dev-storage-cleaner \
-            DevStorageCleaner \
-            ${{ steps.version.outputs.version }}
+          mkdir -p dist
+          cp target/release/dev-storage-cleaner dist/
+          cp README.md dist/ || true
+          cp LICENSE dist/ || true
+          cd dist
+          zip -r "../dev-storage-cleaner-macos-${{ steps.version.outputs.version }}.zip" .
 
-      - name: Create DMG installer
-        run: |
-          chmod +x scripts/create-dmg.sh
-          ./scripts/create-dmg.sh \
-            DevStorageCleaner.app \
-            DevStorageCleaner-macos-${{ matrix.arch }} \
-            ${{ steps.version.outputs.version }}
-
-      - name: Rename DMG to final name
-        run: |
-          mv DevStorageCleaner-macos-${{ matrix.arch }}-${{ steps.version.outputs.version }}.dmg \
-             ${{ matrix.asset_name }}
-
-      - name: Upload artifact
+      - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}
+          name: dev-storage-cleaner-macos-${{ steps.version.outputs.version }}.zip
+          path: dev-storage-cleaner-macos-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
 
   build-windows:
-    name: Build Windows x86_64
+    name: Build Windows
     runs-on: windows-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-target-
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+            echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build release binary
-        run: cargo build --release --target x86_64-pc-windows-msvc
+        run: cargo build --release
 
-      - name: Create Windows package
+      - name: Package Windows build
+        shell: pwsh
         run: |
-          mkdir dist
-          Copy-Item target/x86_64-pc-windows-msvc/release/dev-storage-cleaner.exe dist/
-          Copy-Item README.md dist/ -ErrorAction SilentlyContinue
-          Copy-Item LICENSE dist/ -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item target\release\dev-storage-cleaner.exe dist\
+          if (Test-Path README.md) { Copy-Item README.md dist\ }
+          if (Test-Path LICENSE) { Copy-Item LICENSE dist\ }
+          $zip = "dev-storage-cleaner-windows-x86_64-${{ steps.version.outputs.version }}.zip"
+          Compress-Archive -Path dist\* -DestinationPath $zip -Force
 
-      - name: Create Windows installer zip
-        run: |
-          Compress-Archive -Path dist/* -DestinationPath DevStorageCleaner-windows-x86_64.zip -Force
-
-      - name: Upload artifact
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DevStorageCleaner-windows-x86_64.zip
-          path: DevStorageCleaner-windows-x86_64.zip
+          name: dev-storage-cleaner-windows-x86_64-${{ steps.version.outputs.version }}.zip
+          path: dev-storage-cleaner-windows-x86_64-${{ steps.version.outputs.version }}.zip
           if-no-files-found: error
 
   create-release:
     name: Create Release
-    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
+    needs:
+      - build-macos
+      - build-windows
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
-      - name: Prepare release assets
-        run: |
-          mkdir -p release-assets
-          find artifacts -type f \( -name "*.dmg" -o -name "*.zip" \) -exec cp {} release-assets/ \;
-          ls -lah release-assets
-
-      - name: Extract version from tag
+      - name: Determine version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-            echo "tag=v${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=v${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            tag="${GITHUB_REF#refs/tags/}"
+            echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Generate release notes
-        id: release_notes
+      - name: Collect release assets
         run: |
-          cat << EOF > release_notes.md
+          mkdir -p release-assets
+          find artifacts -name "*.zip" -exec cp {} release-assets/ \;
+          ls -lah release-assets
+
+      - name: Generate release notes
+        run: |
+          cat <<'EOF' > release_notes.md
           # Dev Storage Cleaner ${{ steps.version.outputs.version }}
 
-          ## 📦 Downloads
+          ## Downloads
+          - macOS: `dev-storage-cleaner-macos-${{ steps.version.outputs.version }}.zip`
+          - Windows x86_64: `dev-storage-cleaner-windows-x86_64-${{ steps.version.outputs.version }}.zip`
 
-          ### macOS
-          - **Intel Macs (x86_64)**: \`DevStorageCleaner-macos-x86_64.dmg\`
-          - **Apple Silicon (M1/M2/M3)**: \`DevStorageCleaner-macos-aarch64.dmg\`
-
-          ### Windows
-          - **64-bit**: \`DevStorageCleaner-windows-x86_64.zip\`
-
-          ## 📋 Installation
-
-          ### macOS
-          1. Download the appropriate DMG for your Mac
-          2. Open the DMG file
-          3. Drag "Dev Storage Cleaner" to the Applications folder
-          4. Open from Applications (Right-click → Open on first launch)
-
-          ### Windows
-          1. Download the zip file
-          2. Extract to any folder
-          3. Run \`dev-storage-cleaner.exe\`
-          4. If Windows Defender blocks it, click "More info" → "Run anyway"
-
-          ## 🔄 What's New
-
-          See the full changelog at [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-
-          ---
-
-          Built with ❤️ using Rust and GPUI
+          ## Install
+          1. Download the ZIP for your platform.
+          2. Extract the contents.
+          3. Run the executable (`dev-storage-cleaner` on macOS, `dev-storage-cleaner.exe` on Windows).
           EOF
 
-      - name: Create Release
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.version }}
           body_path: release_notes.md
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          files: |
-            release-assets/*
+          files: release-assets/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  verify-release:
-    name: Verify Release Assets
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Verify release exists
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="v${{ github.event.inputs.version }}"
-          else
-            TAG="${GITHUB_REF#refs/tags/}"
-          fi
-
-          echo "Checking for release: $TAG"
-          gh release view "$TAG" || (echo "Release not found" && exit 1)
-
-          echo ""
-          echo "✅ Release found!"
-          echo ""
-          echo "📦 Release assets:"
-          gh release view "$TAG" --json assets --jq '.assets[].name'
-
-          echo ""
-          echo "🔗 Release URL:"
-          gh release view "$TAG" --json url --jq '.url'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
